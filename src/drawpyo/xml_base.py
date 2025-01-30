@@ -55,12 +55,27 @@ class XMLBase:
         """
         The open tag contains the name of the object but also the attribute tags. This property function concatenates all the attributes in the class along with the opening and closing angle brackets and returns them as a string.
 
+        When the "tag" attribute tag is provided, a tags attribute is applied to the object. This allows for selecting, hiding, or displaying multiple elements in the diagram. When using tags, the open_tag value and id are shifted to the <UserObject> tag.
+
+
         Example:
         <class_name attribute_name=attribute_value>
 
         Returns:
             str: The opening tag of the object with all the attributes.
         """
+        if hasattr(self, "tag"):
+            open_user_object_tag = (
+                f'<UserObject label="{self.value}" tags="{self.tag}" id="{self.id}">'
+            )
+            open_tag = "<" + self.xml_class
+            for att, value in self.attributes.items():
+                if att == "id" or att == "value":
+                    continue
+                if value is not None:
+                    xml_parameter = self.xml_ify(str(value))
+                    open_tag = open_tag + " " + att + '="' + xml_parameter + '"'
+            return open_user_object_tag + "\n" + open_tag + ">"
         open_tag = "<" + self.xml_class
         for att, value in self.attributes.items():
             if value is not None:
@@ -79,6 +94,8 @@ class XMLBase:
         Returns:
             str: The closing tag of the object with all the attributes.
         """
+        if hasattr(self, "tag"):
+            return "</{0}>\n</UserObject>".format(self.xml_class)
         return "</{0}>".format(self.xml_class)
 
     @property
@@ -95,44 +112,6 @@ class XMLBase:
             str: A single XML tag containing the object name, style attributes, and a closer.
         """
         return self.xml_open_tag[:-1] + " />"
-
-    @property
-    def tagged_xml_open_tag(self):
-        """
-        Alternative to the xml_open_tag method for when the tags attribute are provided.
-        This allows for selecting, hiding, or displaying multiple elements in the diagram.
-        When using tags, the open_tag value and id are shifted to the <UserObject> tag.
-        
-        Example:
-        <UserObject label="[name]" tags="[tag-group]" id="[id-number]">
-            <class_name attribute_name=attribute_value>
-
-        Returns:
-            str: The opening tag of the object with all the attributes, including the UserObject tag.
-        """
-        open_user_object_tag = f'<UserObject label="{self.value}" tags="{self.tag}" id="{self.id}">'
-        open_tag = "<" + self.xml_class
-        for att, value in self.attributes.items():
-            if att == "id" or att == "value":
-                continue
-            if value is not None:
-                xml_parameter = self.xml_ify(str(value))
-                open_tag = open_tag + " " + att + '="' + xml_parameter + '"'
-        return open_user_object_tag + "\n" + open_tag + ">"
-
-    @property
-    def tagged_xml_close_tag(self):
-        """
-        Alternative to the xml_close_tag method for when the tags attribute are provided.
-
-        Example:
-            </class_name>
-        </UserObject>
-
-        Returns:
-            str: The closing tag of the object with all the attributes, including the UserObject tag.
-        """
-        return "</{0}>\n</UserObject>".format(self.xml_class)
 
     def xml_ify(self, parameter_string):
         return self.translate_txt(parameter_string, xmlize)
